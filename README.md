@@ -52,6 +52,8 @@ Planning a trip can be overwhelming — from finding attractions to optimizing y
 │ ├── services
 │ ├── app.js
 │ └── server.js
+
+
 /frontend
 ├── public/
 ├── src/
