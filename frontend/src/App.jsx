@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate, Outlet } from 'react-router-dom';
 import LandingPage from './components/LandingPage';
+import LoginPage from './components/LoginPage';
 import TripForm from './components/TripForm';
 import ItineraryDisplay from './components/ItineraryDisplay';
-import './styles/main.css';
-import './styles/TripForm.css';       // in TripForm.jsx
-import './styles/LandingPage.css';    // in LandingPage.jsx
+import Header from './components/Header';
+import ProfilePage from './components/ProfilePage';
+
 function App() {
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AppContent />
     </Router>
   );
@@ -18,7 +19,28 @@ function AppContent() {
   const [itinerary, setItinerary] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/auth/me', {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        }
+      } catch (err) {
+        console.error('Failed to fetch user', err);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+    fetchUser();
+  }, []);
 
   const handleSubmit = async (formData) => {
     setIsLoading(true);
@@ -36,9 +58,11 @@ function AppContent() {
       };
 
       const response = await fetchItinerary(tripData);
-      const parsedItinerary = parseItinerary(response.itinerary, tripData);
       
-      setItinerary(parsedItinerary);
+      // The response is now the itinerary object itself
+      const processedItinerary = processItinerary(response, tripData);
+
+      setItinerary(processedItinerary);
       navigate('/results');
       
     } catch (err) {
@@ -66,67 +90,37 @@ function AppContent() {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || 'Network response was not ok');
     }
-
+    // The service now returns the JSON object directly
     return await response.json();
   };
 
-  const parseItinerary = (aiResponse, tripData) => {
-    try {
-      // Enhanced parsing logic
-      const dayRegex = /Day (\d+):([\s\S]*?)(?=\nDay \d+:|$)/gi;
-      const days = [];
-      let match;
-
-      while ((match = dayRegex.exec(aiResponse))) {
-        const dayNumber = parseInt(match[1]);
-        const dayContent = match[2].trim();
-        
-        const activities = dayContent.split('\n')
-          .filter(line => line.trim())
-          .map(line => {
-            const timeMatch = line.match(/^(\d{1,2}:\d{2}\s*(?:AM|PM)?)\s*-?\s*/i);
-            const time = timeMatch ? timeMatch[1] : '';
-            const description = line.replace(timeMatch?.[0] || '', '').trim();
-            
-            return { time, description };
-          });
-
-        days.push({ dayNumber, activities });
-      }
-
+  const processItinerary = (itineraryData, tripData) => {
+    // The data is already in a good format, we just add some client-side context
       return {
-        destination: tripData.destination,
+      ...itineraryData,
         duration: `${tripData.tripDays} days`,
         travelers: `${tripData.adults} adults, ${tripData.children} children`,
-        budget: tripData.budget,
-        days: days.length ? days : createFallbackItinerary(aiResponse, tripData.tripDays),
-        rawText: aiResponse
-      };
-    } catch (parseError) {
-      console.error('Parsing error:', parseError);
-      return createFallbackItinerary(aiResponse, tripData.tripDays);
-    }
+      budget: tripData.budget
+    };
   };
 
-  const createFallbackItinerary = (text, days) => {
-    return {
-      days: Array.from({ length: days }, (_, i) => ({
-        dayNumber: i + 1,
-        activities: [{
-          time: '',
-          description: text || 'Could not parse itinerary details'
-        }]
-      }))
-    };
+  const ProtectedRoutes = () => {
+    if (authLoading) {
+      return <div>Loading...</div>; // Or a spinner
+    }
+    return user ? <Outlet /> : <Navigate to="/login" />;
   };
 
   return (
     <div className="app">
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<LandingPage user={user} />} />
+        <Route path="/login" element={<LoginPage />} />
         
+        <Route element={<ProtectedRoutes />}>
+          <Route element={ <> <Header user={user} /> <div className="planner-container"> <Outlet/> </div> </> }>
         <Route path="/planner" element={
-          <div className="planner-container">
+              <>
             <h1>AI Trip Planner</h1>
             <TripForm onSubmit={handleSubmit} />
             
@@ -143,9 +137,8 @@ function AppContent() {
                 <button onClick={() => setError(null)}>Dismiss</button>
               </div>
             )}
-          </div>
+              </>
         } />
-        
         <Route path="/results" element={
           itinerary ? (
             <ItineraryDisplay 
@@ -160,7 +153,9 @@ function AppContent() {
             </div>
           )
         } />
-        
+        <Route path="/profile" element={<ProfilePage user={user} />} />
+          </Route>
+        </Route>
       </Routes>
     </div>
   );
