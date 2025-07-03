@@ -1,9 +1,19 @@
 // LandingPage.jsx
 import { useNavigate } from 'react-router-dom';
-import { FaPaperPlane, FaSignInAlt } from 'react-icons/fa';
+import { FaPaperPlane, FaSignInAlt, FaUserCircle, FaSignOutAlt } from 'react-icons/fa';
 
 function LandingPage({ user }) {
   const navigate = useNavigate();
+
+  // Logout handler
+  const handleLogout = async () => {
+    try {
+      await fetch('http://localhost:5000/auth/logout', { credentials: 'include' });
+      window.location.href = '/';
+    } catch (err) {
+      alert('Logout failed');
+    }
+  };
 
   return (
     <div
@@ -18,24 +28,54 @@ function LandingPage({ user }) {
         <p className="text-2xl font-light mb-10" style={{ textShadow: '1px 1px 4px rgba(0, 0, 0, 0.5)' }}>
           Craft your perfect journey with intelligent, personalized itineraries.
         </p>
-        
-        {user ? (
-          <button 
-            onClick={() => navigate('/planner')} 
-            className="inline-flex items-center gap-3 px-8 py-4 bg-blue-600 text-white text-lg font-semibold rounded-full cursor-pointer transition-all duration-300 hover:bg-blue-700 hover:-translate-y-1 shadow-lg"
-          >
-            Go to Planner
-            <FaPaperPlane />
-          </button>
-        ) : (
-          <button 
-            onClick={() => navigate('/login')} 
-            className="inline-flex items-center gap-3 px-8 py-4 bg-blue-600 text-white text-lg font-semibold rounded-full cursor-pointer transition-all duration-300 hover:bg-blue-700 hover:-translate-y-1 shadow-lg"
-          >
-            Login to Start
-            <FaSignInAlt />
-          </button>
-        )}
+        <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mt-8">
+          {user ? (
+            <>
+              <button 
+                onClick={() => navigate('/planner')} 
+                className="inline-flex items-center gap-3 px-8 py-4 bg-green-500 text-white text-lg font-semibold rounded-full cursor-pointer transition-all duration-300 hover:bg-green-600 hover:-translate-y-1 shadow-lg"
+              >
+                Planner
+                <FaPaperPlane />
+              </button>
+              <button
+                onClick={() => navigate('/profile')}
+                className="inline-flex items-center gap-3 px-8 py-4 bg-gray-800 text-white text-lg font-semibold rounded-full cursor-pointer transition-all duration-300 hover:bg-gray-900 hover:-translate-y-1 shadow-lg"
+              >
+                {user.picture ? (
+                  <img src={user.picture} alt="avatar" className="w-8 h-8 rounded-full border-2 border-white mr-2" />
+                ) : (
+                  <FaUserCircle className="w-7 h-7 mr-2" />
+                )}
+                {user.name || user.email || 'Profile'}
+              </button>
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-3 px-8 py-4 bg-red-600 text-white text-lg font-semibold rounded-full cursor-pointer transition-all duration-300 hover:bg-red-700 hover:-translate-y-1 shadow-lg"
+              >
+                Logout
+                <FaSignOutAlt />
+              </button>
+            </>
+          ) : (
+            <>
+              <button 
+                onClick={() => navigate('/login')} 
+                className="inline-flex items-center gap-3 px-8 py-4 bg-blue-600 text-white text-lg font-semibold rounded-full cursor-pointer transition-all duration-300 hover:bg-blue-700 hover:-translate-y-1 shadow-lg"
+              >
+                Login
+                <FaSignInAlt />
+              </button>
+              <button 
+                onClick={() => navigate('/planner')} 
+                className="inline-flex items-center gap-3 px-8 py-4 bg-green-500 text-white text-lg font-semibold rounded-full cursor-pointer transition-all duration-300 hover:bg-green-600 hover:-translate-y-1 shadow-lg"
+              >
+                Planner
+                <FaPaperPlane />
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,35 +1,33 @@
-import { FaGoogle } from 'react-icons/fa';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const LoginPage = () => {
+const SignupPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:5000/auth/google';
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(false);
     try {
-      const res = await fetch('http://localhost:5000/auth/login', {
+      const res = await fetch('http://localhost:5000/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password, displayName })
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Login failed');
+        throw new Error(data.error || 'Signup failed');
       }
-      // Success: reload or redirect
-      window.location.href = '/';
+      setSuccess(true);
+      setTimeout(() => navigate('/'), 1200);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -39,17 +37,18 @@ const LoginPage = () => {
 
   return (
     <div className="flex flex-col items-center justify-center h-screen text-center">
-      <h1 className="text-4xl font-bold mb-2">Welcome Back!</h1>
-      <p className="text-lg text-gray-600 mb-8">Sign in to plan your next adventure.</p>
-      <button 
-        onClick={handleGoogleLogin} 
-        className="inline-flex items-center gap-4 px-6 py-3 bg-[#4285F4] text-white font-semibold rounded-lg cursor-pointer transition-colors duration-300 hover:bg-[#357ae8] shadow-md mb-8"
-      >
-        <FaGoogle size="1.2em" />
-        <span>Sign in with Google</span>
-      </button>
+      <h1 className="text-4xl font-bold mb-2">Create Your Account</h1>
+      <p className="text-lg text-gray-600 mb-8">Sign up to start planning amazing trips.</p>
       <div className="w-full max-w-sm bg-white rounded-xl shadow p-6">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <input
+            type="text"
+            placeholder="Name"
+            value={displayName}
+            onChange={e => setDisplayName(e.target.value)}
+            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            required
+          />
           <input
             type="email"
             placeholder="Email"
@@ -67,21 +66,22 @@ const LoginPage = () => {
             required
           />
           {error && <div className="text-red-600 text-sm text-left">{error}</div>}
+          {success && <div className="text-green-600 text-sm text-left">Signup successful! Redirecting…</div>}
           <button
             type="submit"
             disabled={loading}
-            className="bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition-all duration-200 disabled:opacity-50"
+            className="bg-green-600 text-white font-semibold py-3 rounded-lg hover:bg-green-700 transition-all duration-200 disabled:opacity-50"
           >
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading ? 'Signing up…' : 'Sign up'}
           </button>
         </form>
         <div className="mt-4 text-sm text-gray-600">
-          Don't have an account?{' '}
+          Already have an account?{' '}
           <button
             className="text-blue-600 hover:underline"
-            onClick={() => navigate('/signup')}
+            onClick={() => navigate('/login')}
           >
-            Sign up
+            Log in
           </button>
         </div>
       </div>
@@ -89,4 +89,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage; 
+export default SignupPage; 

@@ -6,6 +6,8 @@ import TripForm from './components/TripForm';
 import ItineraryDisplay from './components/ItineraryDisplay';
 import Header from './components/Header';
 import ProfilePage from './components/ProfilePage';
+import LoadingItinerary from './components/LoadingItinerary';
+import SignupPage from './components/SignupPage';
 
 function App() {
   return (
@@ -116,44 +118,41 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<LandingPage user={user} />} />
         <Route path="/login" element={<LoginPage />} />
-        
+        <Route path="/signup" element={<SignupPage />} />
         <Route element={<ProtectedRoutes />}>
           <Route element={ <> <Header user={user} /> <div className="planner-container"> <Outlet/> </div> </> }>
-        <Route path="/planner" element={
-              <>
-            <h1>AI Trip Planner</h1>
-            <TripForm onSubmit={handleSubmit} />
-            
-            {isLoading && (
-              <div className="loading-overlay">
-                <div className="spinner"></div>
-                <p>Creating your personalized itinerary...</p>
-              </div>
-            )}
-            
-            {error && (
-              <div className="error-message">
-                <p>⚠️ {error}</p>
-                <button onClick={() => setError(null)}>Dismiss</button>
-              </div>
-            )}
-              </>
-        } />
-        <Route path="/results" element={
-          itinerary ? (
-            <ItineraryDisplay 
-              itinerary={itinerary} 
-              onRegenerate={() => navigate('/planner')}
-            />
-          ) : (
-            <div className="empty-state">
-              <h2>No Itinerary Found</h2>
-              <p>Start by planning your trip</p>
-              <button onClick={() => navigate('/planner')}>Plan New Trip</button>
-            </div>
-          )
-        } />
-        <Route path="/profile" element={<ProfilePage user={user} />} />
+            <Route path="/planner" element={
+              isLoading ? (
+                <LoadingItinerary />
+              ) : (
+                <>
+                  <h1>AI Trip Planner</h1>
+                  <TripForm onSubmit={handleSubmit} />
+                  {error && (
+                    <div className="error-message">
+                      <p>⚠️ {error}</p>
+                      <button onClick={() => setError(null)}>Dismiss</button>
+                    </div>
+                  )}
+                </>
+              )
+            } />
+            <Route path="/results" element={
+              itinerary ? (
+                <ItineraryDisplay 
+                  itinerary={itinerary} 
+                  onRegenerate={() => navigate('/planner')}
+                  user={user}
+                />
+              ) : (
+                <div className="empty-state">
+                  <h2>No Itinerary Found</h2>
+                  <p>Start by planning your trip</p>
+                  <button onClick={() => navigate('/planner')}>Plan New Trip</button>
+                </div>
+              )
+            } />
+            <Route path="/profile" element={<ProfilePage user={user} />} />
           </Route>
         </Route>
       </Routes>
